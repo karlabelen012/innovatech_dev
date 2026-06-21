@@ -1,0 +1,48 @@
+# Autoscaling horizontal (HPA) para los dos microservicios backend.
+#
+# Justificación del umbral (50% CPU):
+#   - Es el valor estándar recomendado por AWS y Kubernetes para cargas web
+#     tipo CRUD: deja margen para absorber picos de tráfico antes de que el
+#     pod se sature, sin escalar de forma demasiado agresiva ante variaciones
+#     normales de uso.
+#   - minReplicas: 2 asegura alta disponibilidad (si un pod falla o se
+#     reinicia, el otro sigue respondiendo).
+#   - maxReplicas: 5 limita el consumo de recursos dentro de los cupos
+#     restringidos del Learner Lab de AWS Academy.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-backend-ventas
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-ventas
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-backend-despachos
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-despachos
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50

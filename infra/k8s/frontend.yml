@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          # Reemplazado automáticamente por el pipeline de CI/CD con la URL real del ECR
+          image: REPLACE_FRONTEND_IMAGE
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  # LoadBalancer: AWS provisiona un Classic/Network Load Balancer público.
+  # La URL queda disponible en EXTERNAL-IP con `kubectl get svc frontend`.
+  type: LoadBalancer
