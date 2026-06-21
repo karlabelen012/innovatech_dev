@@ -1,0 +1,57 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-innovatech
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infra/mysql-init/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend-ventas:
+    build: ./backend-ventas
+    container_name: backend-ventas
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ventas_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  backend-despachos:
+    build: ./backend-despachos
+    container_name: backend-despachos
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/despachos_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      VENTAS_SERVICE_URL: http://backend-ventas:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+      backend-ventas:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    container_name: frontend-innovatech
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-ventas
+      - backend-despachos
+
+volumes:
+  mysql_data:
